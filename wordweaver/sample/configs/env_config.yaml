@@ -1,11 +1,14 @@
 title: "WordWeaver Toy Sample"
+description: "the Word Maker for Kanyen'kéha"
 api_key: false
 DEBUG: true
 HOST: '0.0.0.0'
 PORT: 5000
 THREADED: true
 FOMA_PYTHON_BINDINGS: true
+base_url: "https://roedoejet.github.io/wordweaver-GUI/dist_toy"
 favicon: "https://roedoejet.github.io/wordweaver-GUI/dist_toy/favicon.ico"
+screenshot: "https://roedoejet.github.io/wordweaver-GUI/dist_toy/assets/img/screen.png"
 gui_imports: 
   css: []
   js:

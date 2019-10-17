@@ -4,11 +4,22 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>{{title}}</title>
+  <title>{{env.title}}</title>
   <base href="/" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
-  <link href="{{favicon}}" rel="icon" type="image/x-icon" />
-  {% for import in gui_imports['css'] %}
+  <!--  Essential META Tags -->
+  <meta property="og:title" content="{{env.title}}">
+  <meta property="og:description" content="{{env.title}} - {{env.description}}">
+  <meta property="og:image" content="{{env.screenshot}}">
+  <meta property="og:url" content="{{env.base_url}}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!--  Non-Essential, But Recommended -->
+  <meta property="og:site_name" content="{{env.title}}">
+  <meta name="twitter:image:alt" content="{{env.description}}">
+
+  <link href="{{env.favicon}}" rel="icon" type="image/x-icon" />
+  {% for import in env.gui_imports['css'] %}
   <link rel="stylesheet" href="{{import}}">
   {% endfor %}
 </head>
@@ -16,7 +27,7 @@
 
 <body>
   <app-root></app-root>
-  {% for import in gui_imports['js'] %}
+  {% for import in env.gui_imports['js'] %}
   <script nonce="{{ csp_nonce() }}" src="{{import}}" type="text/javascript"></script>
   {% endfor %}
 </body>

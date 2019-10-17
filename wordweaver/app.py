@@ -42,13 +42,13 @@ app.register_blueprint(conjugation_api_2, url_prefix='/api/v2')
 @app.route('/')
 def home():    
     logger.debug("Default template rendered successfully")
-    return render_template('web.html', gui_imports=ENV_CONFIG['gui_imports'], favicon=ENV_CONFIG['favicon'], title=ENV_CONFIG['title'])
+    return render_template('web.html', env=ENV_CONFIG)
 
 @app.route('/<path>')
 def route(path):
     if path in ['wordmaker', 'tableviewer', 'info', 'about']:
         logger.debug("Path template rendered successfully")
-        return render_template('web.html', gui_imports=ENV_CONFIG['gui_imports'], favicon=ENV_CONFIG['favicon'], title=ENV_CONFIG['title'])
+        return render_template('web.html', env=ENV_CONFIG)
     else:
         return page_not_found('404', path)
 
