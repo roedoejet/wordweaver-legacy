@@ -18,18 +18,6 @@
 
   <title>{{env.title}}</title>
   <base href="/" />
-
-  {% if "gtag" in env %}
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script nonce="{{ csp_nonce() }}" async src="https://www.googletagmanager.com/gtag/js?id={{env.gtag}}"></script>
-  <script nonce="{{ csp_nonce() }}">
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', '{{ env.gtag }}');
-  </script>
-  {% endif %}
   
   <link href="{{env.favicon}}" rel="icon" type="image/x-icon" />
   {% for import in env.gui_imports['css'] %}
@@ -41,7 +29,7 @@
 <body>
   <app-root></app-root>
   {% for import in env.gui_imports['js'] %}
-  <script nonce="{{ csp_nonce() }}" src="{{import}}" type="text/javascript"></script>
+  <script src="{{import}}" type="text/javascript"></script>
   {% endfor %}
 </body>
 

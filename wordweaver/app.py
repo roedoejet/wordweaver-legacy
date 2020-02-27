@@ -27,7 +27,11 @@ else:
     CSP = ENV_CONFIG['security']['custom_csp']
     
 # Configure App
-Talisman(app, content_security_policy=CSP, content_security_policy_nonce_in=ENV_CONFIG['security']['csp_nonce_in'])
+if not ENV_CONFIG['DEBUG']:
+    Talisman(app, content_security_policy=CSP, content_security_policy_nonce_in=ENV_CONFIG['security']['csp_nonce_in'])
+    template = 'web.html'
+else:
+    template = 'offline.html'
 app.config.from_object(Config)
 
 logger.debug("App configured successfully")
@@ -42,13 +46,13 @@ app.register_blueprint(conjugation_api_2, url_prefix='/api/v2')
 @app.route('/')
 def home():    
     logger.debug("Default template rendered successfully")
-    return render_template('web.html', env=ENV_CONFIG)
+    return render_template(template, env=ENV_CONFIG)
 
 @app.route('/<path>')
 def route(path):
     if path in ['wordmaker', 'tableviewer', 'info', 'about']:
         logger.debug("Path template rendered successfully")
-        return render_template('web.html', env=ENV_CONFIG)
+        return render_template(template, env=ENV_CONFIG)
     else:
         return page_not_found('404', path)
 
