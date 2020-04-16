@@ -186,7 +186,7 @@ class FstEncoder:
                                  "http_args": {"root": verb_root_id_tag,
                                                "agent": agent_id_tag,
                                                "patient": patient_id_tag,
-                                               "affopt": affopt_id_tag
+                                               "aff-option": affopt_id_tag
                                                }})
         # Post-process tags based on config file
         if INTERFACE_CONFIG['encoding']['post_processing']:

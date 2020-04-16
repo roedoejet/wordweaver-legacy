@@ -129,7 +129,7 @@ class ConjugationList(Resource):
         value['root']['tag'] = tag['root']
         value['pronoun']['agent'] = tag['agent']
         value['pronoun']['patient'] = tag['patient']
-        value['affopt'] = tag['affopt']
+        value['aff-option'] = tag['aff-option']
         return value
 
     @require_appkey
@@ -160,19 +160,43 @@ class ConjugationList(Resource):
                 markers = ['???']
             # translate from the tags
             translation = self.translator.transduce_tags(tag['fst'])
+            # TODO: THIS HAS BEEN FRANKENSTEINED FOR NGRX UI DEBUGGING!!! DO NOT USE!!!!
             for m in markers:
                 conjugation = {}
+                newConjugation = []
                 if m != '???' and '+' not in m:
                     conjugation["translation"] = translation
-                    conjugation["values"] = self.merge_tag_and_values(tag['http_args'], self.marker_to_values(m))
+                    conjugation["values"] = self.merge_tag_and_values(
+                        tag['http_args'], self.marker_to_values(m))
+                    newConjugation.append(
+                        {'position': conjugation['values']['pronoun']['position'],
+                         'value': conjugation['values']['pronoun']['value'],
+                         'gloss': conjugation['values']['pronoun']['agent'] + " > " + conjugation['values']['pronoun']['patient'],
+                         'type': ['pronoun', 'agent']})
+                    newConjugation.append({
+                        'position': conjugation['values']['root']['position'],
+                        'value': conjugation['values']['root']['value'],
+                        'gloss': 'verb',
+                        'type': ['root']
+                    })
+                    newConjugation.append({'english': translation})
+                    for x in conjugation['values']['affixes']:
+                        newConjugation.append({
+                            'position': x['position'],
+                            'value': x['value'],
+                            'gloss': x['tag'],
+                            'type': [x['type'], 'affix']
+                        })
                 if 'tags' in args and args['tags']:
                     conjugation['tag'] = tag
                 if 'markers' in args and args['markers']:
                     conjugation['marker'] = m
                 if 'plain' in args and args['plain']:
                     conjugation['plain_text'] = return_plain(m)
-                response.append(conjugation)
-
+                if newConjugation:
+                    response.append(
+                        {'input': tag['http_args'], 'output': newConjugation})
+        return response
         # If you want to build a docx, build and return
         if "docx" in args and args['docx']:
             dm = DocxMaker(response)
@@ -181,26 +205,26 @@ class ConjugationList(Resource):
             try:
                 document.save(path)
                 return send_file(path,
-                                 as_attachment = True,
-                                 mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                 attachment_filename = 'conjugations.docx')
+                                 as_attachment=True,
+                                 mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                 attachment_filename='conjugations.docx')
             finally:
                 os.remove(path)
 
         # If you want to build a latex doc, build and return
         if "latex" in args and args['latex']:
-            lm=LatexMaker(response)
-            latex=lm.export_to_bytes()
-            fd, path=mkstemp()
+            lm = LatexMaker(response)
+            latex = lm.export_to_bytes()
+            fd, path = mkstemp()
             try:
                 with os.fdopen(fd, 'wb') as tmp:
                     # do stuff with temp file
                     tmp.write(latex)
                     tmp.seek(0)
                     return send_file(path,
-                                     as_attachment = True,
-                                     mimetype = 'text/plain',
-                                     attachment_filename = 'conjugations.tex')
+                                     as_attachment=True,
+                                     mimetype='text/plain',
+                                     attachment_filename='conjugations.tex')
             finally:
                 os.remove(path)
         # don't filter if debugging
@@ -211,26 +235,27 @@ class ConjugationList(Resource):
 
 # Main API
 
-conjugation_api=Blueprint('resources.conjugation', __name__)
+
+conjugation_api = Blueprint('resources.conjugation', __name__)
 CORS(conjugation_api)
-api=Api(conjugation_api)
+api = Api(conjugation_api)
 
 api.add_resource(
     ConjugationList,
     '/conjugations',
-    endpoint = 'conjugations'
+    endpoint='conjugations'
 )
 
 # Secondary API
 
-conjugation_api_2=Blueprint('resources.conjugation2', __name__)
+conjugation_api_2 = Blueprint('resources.conjugation2', __name__)
 CORS(conjugation_api_2)
-api2=Api(conjugation_api_2)
+api2 = Api(conjugation_api_2)
 
 api2.add_resource(
     ConjugationList,
     '/conjugations',
-    endpoint = 'conjugations',
-    resource_class_kwargs = {'fp': foma_access(os.path.join(FOMABINS_DIR,
+    endpoint='conjugations',
+    resource_class_kwargs={'fp': foma_access(os.path.join(FOMABINS_DIR,
                                                           ENV_CONFIG['test_fst_filename']))}
 )
