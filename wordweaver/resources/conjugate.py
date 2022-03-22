@@ -4,7 +4,7 @@ from tempfile import mkstemp
 import os.path
 
 from flask import Blueprint, abort, send_file
-from flask_restful import (Resource, Api, reqparse, fields)
+from flask_restful import Resource, Api, reqparse, fields
 from flask_cors import CORS
 
 from wordweaver import __file__ as ww_file
@@ -21,104 +21,152 @@ from wordweaver.fst.encoder import FstEncoder
 from wordweaver.fst.decoder import FstDecoder
 from wordweaver.config import ENV_CONFIG
 
-fpb = ENV_CONFIG['FOMA_PYTHON_BINDINGS']
+fpb = ENV_CONFIG["FOMA_PYTHON_BINDINGS"]
 if fpb:
-    from wordweaver.fst.utils.foma_access_python import foma_access_python as foma_access
+    from wordweaver.fst.utils.foma_access_python import (
+        foma_access_python as foma_access,
+    )
 else:
     from wordweaver.fst.utils.foma_access import foma_access
 
 
-DATA_DIR = os.environ.get('WW_DATA_DIR')
+DATA_DIR = os.environ.get("WW_DATA_DIR")
 
 if not DATA_DIR:
     logger.warning(
-        'WW_DATA_DIR environment variable is not set, using default sample data instead.')
-    DATA_DIR = os.path.join(os.path.dirname(ww_file), 'sample', 'data')
+        "WW_DATA_DIR environment variable is not set, using default sample data instead."
+    )
+    DATA_DIR = os.path.join(os.path.dirname(ww_file), "sample", "data")
 
-FOMABINS_DIR = os.path.join(DATA_DIR, 'fomabins')
+FOMABINS_DIR = os.path.join(DATA_DIR, "fomabins")
 
 
 conjugation_fields = {
-    'root': fields.Nested(verb_fields),
-    'aspect': fields.Nested(affix_fields),
-    'agent': fields.Nested(pronoun_fields),
-    'patient': fields.Nested(pronoun_fields),
-    'tmp_affix': fields.Nested(affix_fields),
-    'pas': fields.Nested(affix_fields)
+    "root": fields.Nested(verb_fields),
+    "aspect": fields.Nested(affix_fields),
+    "agent": fields.Nested(pronoun_fields),
+    "patient": fields.Nested(pronoun_fields),
+    "tmp_affix": fields.Nested(affix_fields),
+    "pas": fields.Nested(affix_fields),
 }
 
 
 class ConjugationList(Resource):
-    def __init__(self, fp=foma_access(os.path.join(FOMABINS_DIR,
-                                                   ENV_CONFIG["fst_filename"]))):
+    def __init__(
+        self, fp=foma_access(os.path.join(FOMABINS_DIR, ENV_CONFIG["fst_filename"]))
+    ):
         self.parser = reqparse.RequestParser()
         self.foma = fp
         self.translator = EnglishGenerator()
 
         self.parser.add_argument(
-            'agent', dest='agent',
-            type=str, location='args', action='append',
-            required=False, help='An agent tag for the conjugation',
+            "agent",
+            dest="agent",
+            type=str,
+            location="args",
+            action="append",
+            required=False,
+            help="An agent tag for the conjugation",
         )
 
         self.parser.add_argument(
-            'patient', dest='patient',
-            type=str, location='args', action='append',
-            required=False, help='A patient tag for the conjugation',
+            "patient",
+            dest="patient",
+            type=str,
+            location="args",
+            action="append",
+            required=False,
+            help="A patient tag for the conjugation",
         )
 
         self.parser.add_argument(
-            'aff-option', dest='aff-option',
-            type=str, location='args', action='append',
-            required=False, help='An affix option tag for the conjugation',
+            "aff-option",
+            dest="aff-option",
+            type=str,
+            location="args",
+            action="append",
+            required=False,
+            help="An affix option tag for the conjugation",
         )
 
         self.parser.add_argument(
-            'root', dest='root',
-            type=str, location='args', action='append',
-            required=False, help='A verb root tag for the conjugation',
+            "root",
+            dest="root",
+            type=str,
+            location="args",
+            action="append",
+            required=False,
+            help="A verb root tag for the conjugation",
         )
 
         self.parser.add_argument(
-            'offset', dest='offset',
-            type=int, location='args', default=0,
-            required=False, help='An offset for conjugations with default of 0 - maximum range between offset and limit is 100',
+            "offset",
+            dest="offset",
+            type=int,
+            location="args",
+            default=0,
+            required=False,
+            help="An offset for conjugations with default of 0 - maximum range between offset and limit is 100",
         )
 
         self.parser.add_argument(
-            'limit', dest='limit',
-            type=int, location='args', default=5,
-            required=False, help='A limit for conjugations with a default of 5 - maximum range between offset and limit is 100',
+            "limit",
+            dest="limit",
+            type=int,
+            location="args",
+            default=5,
+            required=False,
+            help="A limit for conjugations with a default of 5 - maximum range between offset and limit is 100",
         )
 
         self.parser.add_argument(
-            'markers', dest='markers',
-            type=bool, location='args', default=False,
-            required=False, help='Return the marker generated by the FST instead of the normal response. Meant for debugging.',
+            "markers",
+            dest="markers",
+            type=bool,
+            location="args",
+            default=False,
+            required=False,
+            help="Return the marker generated by the FST instead of the normal response. Meant for debugging.",
         )
 
         self.parser.add_argument(
-            'tags', dest='tags',
-            type=bool, location='args', default=False,
-            required=False, help='Return the tag given to the FST instead of the normal response. Meant for debugging',
+            "tags",
+            dest="tags",
+            type=bool,
+            location="args",
+            default=False,
+            required=False,
+            help="Return the tag given to the FST instead of the normal response. Meant for debugging",
         )
 
         self.parser.add_argument(
-            'plain', dest='plain',
-            type=bool, location='args', default=False,
-            required=False, help='Return plain text. Meant for debugging',
+            "plain",
+            dest="plain",
+            type=bool,
+            location="args",
+            default=False,
+            required=False,
+            help="Return plain text. Meant for debugging",
         )
 
         self.parser.add_argument(
-            'docx', dest='docx',
-            type=bool, location='args', default=False,
-            required=False, help='Return docx file.',
+            "docx",
+            dest="docx",
+            type=bool,
+            location="args",
+            default=False,
+            required=False,
+            help="Return docx file.",
         )
 
         self.parser.add_argument(
-            'latex', dest='latex',
-            type=bool, location='args', default=False,
-            required=False, help='Return latex file.',
+            "latex",
+            dest="latex",
+            type=bool,
+            location="args",
+            default=False,
+            required=False,
+            help="Return latex file.",
         )
 
     def marker_to_values(self, marker):
@@ -126,19 +174,24 @@ class ConjugationList(Resource):
         return decoder.returnValuesFromMarkers()
 
     def merge_tag_and_values(self, tag, value):
-        value['root']['tag'] = tag['root']
-        value['pronoun']['agent'] = tag['agent']
-        value['pronoun']['patient'] = tag['patient']
-        value['affopt'] = tag['affopt']
+        value["root"]["tag"] = tag["root"]
+        value["pronoun"]["agent"] = tag["agent"]
+        value["pronoun"]["patient"] = tag["patient"]
+        value["affopt"] = tag["affopt"]
         return value
 
     @require_appkey
     def get(self):
         # Get args
         args = self.parser.parse_args()
-        conj_range = args['limit'] - args['offset']
+        conj_range = args["limit"] - args["offset"]
         if conj_range > 10:
-            abort(403, description="Range between offset and limit {} exceeds maximum allowed. Please contact developers if you require more access.".format(conj_range))
+            abort(
+                403,
+                description="Range between offset and limit {} exceeds maximum allowed. Please contact developers if you require more access.".format(
+                    conj_range
+                ),
+            )
 
         # Turn args into tags
         tag_maker = FstEncoder(args)
@@ -147,7 +200,9 @@ class ConjugationList(Resource):
         except FomaInputException as e:
             print(("Foma Error" + e))
             abort(
-                400, description="The FST failed to conjugate. Exception: {}".format(str(e)))
+                400,
+                description="The FST failed to conjugate. Exception: {}".format(str(e)),
+            )
 
         # start with an empty response list
         response = []
@@ -155,82 +210,86 @@ class ConjugationList(Resource):
         # Trigger "down" from fst with tags (return verb).
         for tag in tags:
             # get conjugations from FST
-            markers = list(self.foma.down(tag['fst']))
+            markers = list(self.foma.down(tag["fst"]))
             if not markers:
-                markers = ['???']
+                markers = ["???"]
             # translate from the tags
-            translation = self.translator.transduce_tags(tag['fst'])
+            translation = self.translator.transduce_tags(tag["fst"])
             for m in markers:
                 conjugation = {}
-                if m != '???' and '+' not in m:
+                if m != "???" and "+" not in m:
                     conjugation["translation"] = translation
-                    conjugation["values"] = self.merge_tag_and_values(tag['http_args'], self.marker_to_values(m))
-                if 'tags' in args and args['tags']:
-                    conjugation['tag'] = tag
-                if 'markers' in args and args['markers']:
-                    conjugation['marker'] = m
-                if 'plain' in args and args['plain']:
-                    conjugation['plain_text'] = return_plain(m)
+                    conjugation["values"] = self.merge_tag_and_values(
+                        tag["http_args"], self.marker_to_values(m)
+                    )
+                if "tags" in args and args["tags"]:
+                    conjugation["tag"] = tag
+                if "markers" in args and args["markers"]:
+                    conjugation["marker"] = m
+                if "plain" in args and args["plain"]:
+                    conjugation["plain_text"] = return_plain(m)
                 response.append(conjugation)
 
         # If you want to build a docx, build and return
-        if "docx" in args and args['docx']:
+        if "docx" in args and args["docx"]:
             dm = DocxMaker(response)
             document = dm.export()
             fd, path = mkstemp()
             try:
                 document.save(path)
-                return send_file(path,
-                                 as_attachment = True,
-                                 mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                 attachment_filename = 'conjugations.docx')
+                return send_file(
+                    path,
+                    as_attachment=True,
+                    mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    attachment_filename="conjugations.docx",
+                )
             finally:
                 os.remove(path)
 
         # If you want to build a latex doc, build and return
-        if "latex" in args and args['latex']:
-            lm=LatexMaker(response)
-            latex=lm.export_to_bytes()
-            fd, path=mkstemp()
+        if "latex" in args and args["latex"]:
+            lm = LatexMaker(response)
+            latex = lm.export_to_bytes()
+            fd, path = mkstemp()
             try:
-                with os.fdopen(fd, 'wb') as tmp:
+                with os.fdopen(fd, "wb") as tmp:
                     # do stuff with temp file
                     tmp.write(latex)
                     tmp.seek(0)
-                    return send_file(path,
-                                     as_attachment = True,
-                                     mimetype = 'text/plain',
-                                     attachment_filename = 'conjugations.tex')
+                    return send_file(
+                        path,
+                        as_attachment=True,
+                        mimetype="text/plain",
+                        attachment_filename="conjugations.tex",
+                    )
             finally:
                 os.remove(path)
         # don't filter if debugging
-        if ('tags' in args and args['tags']) or ('markers' in args and args['markers']):
+        if ("tags" in args and args["tags"]) or ("markers" in args and args["markers"]):
             return response
         # filter out all malformed responses without values
-        return [r for r in response if 'values' in r]
+        return [r for r in response if "values" in r]
+
 
 # Main API
 
-conjugation_api=Blueprint('resources.conjugation', __name__)
+conjugation_api = Blueprint("resources_conjugation", __name__)
 CORS(conjugation_api)
-api=Api(conjugation_api)
+api = Api(conjugation_api)
 
-api.add_resource(
-    ConjugationList,
-    '/conjugations',
-    endpoint = 'conjugations'
-)
+api.add_resource(ConjugationList, "/conjugations", endpoint="conjugations")
 
 # Secondary API
 
-conjugation_api_2=Blueprint('resources.conjugation2', __name__)
+conjugation_api_2 = Blueprint("resources-conjugation2", __name__)
 CORS(conjugation_api_2)
-api2=Api(conjugation_api_2)
+api2 = Api(conjugation_api_2)
 
 api2.add_resource(
     ConjugationList,
-    '/conjugations',
-    endpoint = 'conjugations',
-    resource_class_kwargs = {'fp': foma_access(os.path.join(FOMABINS_DIR,
-                                                          ENV_CONFIG['test_fst_filename']))}
+    "/conjugations",
+    endpoint="conjugations",
+    resource_class_kwargs={
+        "fp": foma_access(os.path.join(FOMABINS_DIR, ENV_CONFIG["test_fst_filename"]))
+    },
 )
